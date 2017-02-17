@@ -8,6 +8,7 @@ EMPTY_RECORD_MARKER = b'--'
 MEMORY_UNIT_MULTIPLIER = {
     "B": .001,
     "kB": 1,
+    "KiB": 1,
     "MiB": 1000,
     "MB": 1000,
     "GiB": 1000000,

@@ -23,7 +23,7 @@ docker run -d \
    -v /var/run/docker.sock:/var/run/docker.sock \
    -p 1988:1988 \
    --rm \
-   admiral_lighthouse
+   superfunnel/admiral_lighthouse
 # query it
 curl http://0.0.0.0:1988
 ```

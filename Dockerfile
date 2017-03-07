@@ -4,8 +4,8 @@ WORKDIR /app
 ENV PYTHONPATH /app
 EXPOSE 1988
 COPY requirements.txt /app/
-COPY stream_reader.py /app/
+COPY app.py /app/
 RUN pip install -r requirements.txt
 HEALTHCHECK --interval=30s --timeout=10s \
             CMD curl -f http://0.0.0.0:1988 || exit 1
-ENTRYPOINT ["python", "./app.py"]
+ENTRYPOINT ["python", "app.py"]

@@ -4,7 +4,6 @@ import sys
 from aiohttp import web
 from collections import deque, defaultdict
 
-from dockerpty import exec_command
 from docker import DockerClient
 import io, os, pty
 import pexpect, aiofiles

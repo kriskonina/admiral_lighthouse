@@ -7,5 +7,5 @@ COPY requirements.txt /app/
 COPY app.py /app/
 RUN pip install -r requirements.txt
 HEALTHCHECK --interval=30s --timeout=10s \
-            CMD curl -f http://0.0.0.0:1988 || exit 1
+            CMD curl -f http://0.0.0.0:1988/stat || exit 1
 ENTRYPOINT ["python", "./app.py"]

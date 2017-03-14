@@ -133,13 +133,11 @@ async def executeHandler(request):
 
     try:
         request.app.websockets[ip].append(ws)
-        cmd = [ "docker", "exec",  "-i", "-t", container_id, cmd]
         kid = pexpect.spawn("docker exec -it {} sh".format(container_id))
         emitter_task = request.app.loop.create_task(emitter(kid))
 
         async for msg in ws:
             print("got", msg.data, msg.data == 'c+c', flush=1)
-            _handle_keys
             if msg.data == 'c+c':
                 kid.sendintr()
                 continue

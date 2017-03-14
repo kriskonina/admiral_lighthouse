@@ -119,11 +119,12 @@ async def executeHandler(request):
     container_id = request.match_info['container_id']
     cmd = request.match_info['cmd']
 
-    async def emitter(kid):
+    async def emitter(kid, ws):
         fd = kid.fileno()
         async with aiofiles.open(fd) as f:
             print("opened", flush=1)
             async for line in f:
+                ws.send_bytes(line)
                 print(line, flush=1)
                 print("=" * 30, flush=1)
         print("over and out :(", flush=1)
@@ -134,7 +135,7 @@ async def executeHandler(request):
     try:
         request.app.websockets[ip].append(ws)
         kid = pexpect.spawn("docker exec -it {} sh".format(container_id))
-        emitter_task = request.app.loop.create_task(emitter(kid))
+        emitter_task = request.app.loop.create_task(emitter(kid, ws))
 
         async for msg in ws:
             print("got", msg.data, msg.data == 'c+c', flush=1)

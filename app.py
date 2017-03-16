@@ -140,6 +140,7 @@ async def executeHandler(request):
                 if msg.data == 'c+c':
                     kid.sendintr()
                     continue
+                print("* Receiving bytes", msg.data)
                 kid.sendline(msg.data)
             elif msg.tp == MsgType.error:
                 print("receiving error: ", ws.exception(), flush=1)

@@ -1,15 +1,18 @@
 Admiral Lighthouse
 =========
 
-Admiral Lighthouse is (aimed to be) an extremely lightweight alternative to other container monitoring tools.
+Admiral Lighthouse is (aimed to be) an extremely lightweight alternative to other container monitoring tools. Requires Python 3.5. Built with aiohttp.
 
 How it works
 -------
-Essentialy, by parsing the output of  ```docker stats``` (Docker Engine >=13.0.0). It thus fully relies on the accuracy of docker-provided metrics about its own (running) containers. It can be thought of as an extension to Docker Remote API which, as of time of writing, lacks support for some of the nifty novelities introduced with Docker Engine version 13.0.0. 
+Essentialy, the monitoring part is realized by parsing the output of  ```docker stats``` (Docker Engine >=13.0.0). It thus fully relies on the accuracy of docker-provided metrics about its own (running) containers. It can be thought of as an extension to Docker Remote API which, as of time of writing, lacks support for some of the nifty novelities introduced with Docker Engine version 13.0.0.
 
 Each time ```docker stats``` outputs new data (every second), the stats of all running containers get summed up and put put on the queue. Future version (if any), will provide some additional aggregation tools, i.e. average the results over arbitrary timeframes.
 
-It sports a simple web server listening on port 1988 to handle data extraction.
+On top of that, you can also interact with container's shell via ```docker exec``` command. The official docker API client for Python falls short of providing
+an async way to communicate with the pseudo-tty. By parsing
+
+It sports a simple web server listening on port 1988.
 
 How to run it
 -------
@@ -25,7 +28,7 @@ docker run -d \
    --rm \
    superfunnel/admiral_lighthouse
 # query it
-curl http://0.0.0.0:1988
+curl http://0.0.0.0:1988/stat
 ```
 will query the server for the queued usage record, returning a JSON response, specifically a list of the following:
 * summed cpu usage from all containers [%]
@@ -35,4 +38,3 @@ will query the server for the queued usage record, returning a JSON response, sp
 * block writes [KB]
 * block reads [KB]
 * a total number of processes
-

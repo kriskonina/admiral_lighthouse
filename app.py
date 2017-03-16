@@ -124,6 +124,12 @@ async def executeHandler(request):
         async with aiofiles.open(fd, 'rb') as f:
             async for line in f:
                 ws.send_bytes(line)
+<<<<<<< HEAD
+=======
+                print(line, flush=1)
+                print("=" * 30, flush=1)
+        print("over and out :(", flush=1)
+>>>>>>> ebc572b20cde0e6acb003ef5b29cd1f52e21340a
 
     ws = web.WebSocketResponse(heartbeat=10)
     await ws.prepare(request)

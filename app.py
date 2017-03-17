@@ -137,11 +137,8 @@ async def executeHandler(request):
             if msg.tp == MsgType.text:
                 if msg.data == 'close':
                     await ws.close()
-                if msg.data == 'c+c':
-                    kid.sendintr()
-                    continue
                 print("* Receiving bytes", msg.data)
-                kid.sendline(msg.data)
+                kid.send(msg.data)
             elif msg.tp == MsgType.error:
                 print("receiving error: ", ws.exception(), flush=1)
 

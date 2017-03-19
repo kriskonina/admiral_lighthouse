@@ -149,7 +149,8 @@ async def executeHandler(request):
 
     finally:
         emitter_task.cancel()
-        kid.kill(9)
+        if not kid.terminate():
+            kid.kill(9)
         request.app.websockets[ip].remove(ws)
         return ws
 

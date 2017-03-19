@@ -125,6 +125,7 @@ async def executeHandler(request):
         fd = kid.fileno()
         async with aiofiles.open(fd, 'rb') as f:
             async for line in f:
+                print("sending now", line.decode(), flush=1)
                 ws.send_bytes(line)
 
     ws = web.WebSocketResponse(heartbeat=10)
@@ -132,7 +133,9 @@ async def executeHandler(request):
 
     try:
         request.app.websockets[ip].append(ws)
-        kid = pexpect.spawn("docker exec -it {} sh".format(container_id))
+        kid = pexpect.spawn("docker exec -it {} sh".format(container_id), echo=False, maxread=1)
+        kid.setecho(False)
+        kid.waitnoecho()
         emitter_task = request.app.loop.create_task(emitter(kid, ws))
 
         async for msg in ws:

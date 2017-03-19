@@ -113,7 +113,9 @@ async def executeHandler(request):
 
     # allow the maximum of 5 sockets per node
     ip = request.transport.get_extra_info('peername')[0]
-    if len(request.app.websockets[ip]) == 4:
+    max_sockets = 4
+
+    if len(request.app.websockets[ip]) == max_sockets:
         raise web.HTTPTooManyRequests()
 
     container_id = request.match_info['container_id']
@@ -147,6 +149,7 @@ async def executeHandler(request):
 
     finally:
         emitter_task.cancel()
+        kid.kill(9)
         request.app.websockets[ip].remove(ws)
         return ws
 

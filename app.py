@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import sys
 from aiohttp import web
 from collections import deque, defaultdict
@@ -20,30 +21,36 @@ MEMORY_UNIT_MULTIPLIER = {
     "GiB": 1000000,
     "GB": 1000000
 }
+QUANT_UNIT_REGEX = re.compile(r"([\.0-9]+)([a-z]+)", re.I)
 
 def ratio_unit_parser(item):
     def parse_side(side_item):
-        side_val, side_unit = side_item.split(" ")
+        quant_unit = QUANT_UNIT_REGEX.match(side_item)
+        if quant_unit:
+            side_val, side_unit = quant_unit.groups()
+            return float(side_val) * MEMORY_UNIT_MULTIPLIER[side_unit]
         return float(side_val) * MEMORY_UNIT_MULTIPLIER[side_unit]
     leftside, rightside = item.split(" / ")
     return parse_side(leftside.strip()), parse_side(rightside.strip())
 
 def parse_record_line(record):
     memory_raw = record['m'].split(" / ")[0].strip()
-    memory_val, memory_unit = memory_raw.split(" ")
-    kb_memory = float(memory_val.strip()) * MEMORY_UNIT_MULTIPLIER[memory_unit.strip()]
+    quant_unit = QUANT_UNIT_REGEX.match(memory_raw)
+    if quant_unit:
+        memory_val, memory_unit = quant_unit.groups()
+        kb_memory = float(memory_val.strip()) * MEMORY_UNIT_MULTIPLIER[memory_unit.strip()]
 
-    kb_network_in, kb_network_out = ratio_unit_parser(record['n'])
-    kb_disk_in, kb_disk_out = ratio_unit_parser(record['d'])
-    return (
-        float(record["c"].replace("%", "")), # cpu
-        kb_memory,                           # memory usage in KB
-        kb_network_in,                       # network incoming in KB
-        kb_network_out,                      # network outcoming in KB
-        kb_disk_in,                          # block writes in KB
-        kb_disk_out,                         # block reads in KB
-        int(record['p'].strip())             # PIDs
-    )
+        kb_network_in, kb_network_out = ratio_unit_parser(record['n'])
+        kb_disk_in, kb_disk_out = ratio_unit_parser(record['d'])
+        return (
+            float(record["c"].replace("%", "")), # cpu
+            kb_memory,                           # memory usage in KB
+            kb_network_in,                       # network incoming in KB
+            kb_network_out,                      # network outcoming in KB
+            kb_disk_in,                          # block writes in KB
+            kb_disk_out,                         # block reads in KB
+            int(record['p'].strip())             # PIDs
+        )
 
 class StatHolder:
     _stack = deque([], 2)

@@ -163,12 +163,11 @@ async def executeHandler(request):
         request.app.loop.add_reader(master, partial(callback, master, ws))
         request.app.websockets[ip].append(ws)
 
-        print('master is in receiver:', master, flush=1)
         async for msg in ws:
             if msg.tp == MsgType.text:
                 if msg.data == 'close':
                     await ws.close()
-            os.write(master, msg.data.encode() + b"\n\b")
+            os.write(master, msg.data.encode())
     except Exception as exc:
         print(exc, flush=1)
     finally:

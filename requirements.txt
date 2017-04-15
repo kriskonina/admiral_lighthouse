@@ -1,4 +1,2 @@
-aiofiles
 aiohttp
-pexpect
 docker

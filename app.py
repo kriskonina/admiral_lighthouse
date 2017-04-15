@@ -1,15 +1,20 @@
 import asyncio
+import ctypes
 import json
+import os
 import re
+import pty
+import subprocess
 import sys
-from aiohttp import web
 from collections import deque, defaultdict
+from functools import partial
 
-from docker import DockerClient
-import io, os, pty
-import pexpect, aiofiles
-
+from aiohttp import web
 from aiohttp.web_ws import WSMsgType, MsgType
+from docker import DockerClient
+
+
+libc = ctypes.CDLL('libc.so.6')
 
 EMPTY_RECORD_MARKER = b'--'
 MEMORY_UNIT_MULTIPLIER = {
@@ -128,41 +133,54 @@ async def executeHandler(request):
     container_id = request.match_info['container_id']
     cmd = request.match_info['cmd']
 
-    async def emitter(kid, ws):
-        fd = kid.fileno()
-        async with aiofiles.open(fd, 'rb') as f:
-            async for line in f:
-                print("sending now", line.decode(), flush=1)
-                ws.send_bytes(line)
+    master, slave = pty.openpty()
+
+    def callback(master, ws):
+       try:
+          msg = os.read(master, 1024)
+       except OSError:
+          request.app.loop.remove_reader(master)
+          msg = b"Session terminated"
+       ws.send_bytes(msg)
+
+    command = [
+        "docker", "exec", "-it",
+        container_id, "bash"
+    ]
+    proc = subprocess.Popen(
+        command,
+        start_new_session=True,
+        stdin=slave,
+        stdout=slave,
+        stderr=slave)
+
+    os.close(slave)
 
     ws = web.WebSocketResponse(heartbeat=10)
     await ws.prepare(request)
 
     try:
+        request.app.loop.add_reader(master, partial(callback, master, ws))
         request.app.websockets[ip].append(ws)
-        kid = pexpect.spawn("docker exec -it {} sh".format(container_id), echo=False, maxread=1)
-        kid.setecho(False)
-        kid.waitnoecho()
-        emitter_task = request.app.loop.create_task(emitter(kid, ws))
 
+        print('master is in receiver:', master, flush=1)
         async for msg in ws:
             if msg.tp == MsgType.text:
                 if msg.data == 'close':
                     await ws.close()
-                print("* Receiving bytes", msg.data)
-                kid.send(msg.data)
-            elif msg.tp == MsgType.error:
-                print("receiving error: ", ws.exception(), flush=1)
-
+            os.write(master, msg.data.encode() + b"\n\b")
     except Exception as exc:
-        print("Exc", exc, flush=1)
-
+        print(exc, flush=1)
     finally:
-        emitter_task.cancel()
-        if not kid.terminate():
-            kid.kill(9)
+        try:
+           request.app.loop.remove_reader(master)
+        except:
+           pass
+        proc.terminate()
+        os.close(master)
         request.app.websockets[ip].remove(ws)
         return ws
+
 
 app = web.Application()
 app.websockets = defaultdict(list)
